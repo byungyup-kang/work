@@ -63,3 +63,38 @@ tq_portfolio(data = mult_monthly_returns_stocks,
              col_rename = NULL,
              wealth.index = FALSE)
 
+#####   #####   #####   #####   #####   #####   #####   #####   #####   #####
+
+stock_prices <- c("AAPL", "GOOG", "NFLX") %>% tq_get(get  = "stock.prices", from = "2010-01-01", to = "2015-12-31")
+stock_prices
+
+stock_returns_monthly <- stock_prices %>%
+    group_by(symbol) %>%
+    tq_transmute(select = adjusted, mutate_fun = periodReturn, period = "monthly", col_rename = "Ra")
+stock_returns_monthly
+
+#####   #####   #####   #####   #####   #####   #####   #####   #####   #####
+
+wts <- c(0.5, 0.0, 0.5)
+portfolio_returns_monthly <- stock_returns_monthly %>%
+    tq_portfolio(assets_col = symbol, returns_col = Ra, weights = wts, col_rename = "Ra")
+
+portfolio_growth_monthly <- stock_returns_monthly %>%
+    tq_portfolio(assets_col = symbol, returns_col = Ra, weights = wts, col_rename = "investment.growth", 
+                 wealth.index = TRUE) %>%
+    mutate(investment.growth = investment.growth * 10000)
+
+portfolio_growth_monthly %>%
+    ggplot(aes(x = date, y = investment.growth)) +
+    geom_line(size = 2, color = palette_light()[[1]]) +
+    labs(title = "Portfolio Growth",
+         subtitle = "50% AAPL, 0% GOOG, and 50% NFLX",
+         caption = "Now we can really visualize performance!",
+         x = "", y = "Portfolio Value") +
+    geom_smooth(method = "loess") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar)
+
+
+
